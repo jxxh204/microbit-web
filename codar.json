@@ -1,0 +1,18 @@
+{
+    "target": {
+        "name": "codal-microbit",
+        "url": "https://github.com/microbit-foundation/codal-microbit",
+        "branch": "master",
+        "type": "git",
+        "test_ignore": true,
+        "dev": true
+    } ,
+    "config":{
+        "DEVICE_BLE": 1,
+        "MICROBIT_BLE_ENABLED" : 1,
+        "MICROBIT_BLE_OPEN" : 1,
+        "MICROBIT_BLE_DFU_SERVICE": 1,
+        "MICROBIT_BLE_EVENT_SERVICE" : 1,
+        "MICROBIT_BLE_DEVICE_INFORMATION_SERVICE": 1
+    }
+}

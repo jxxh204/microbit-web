@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>lego connect</title>
+</head>
+<style>
+    body {
+        position: absolute;
+        left: 50%;
+        top:50%;
+        transform: translate(-50%,-50%);
+        text-align: center;
+        font-size: 2vw;
+    }
+    button {
+        width: 20vw;
+        font-size: 2vw;
+        height: 5vw;
+        background: black;
+        color:white
+    }
+    #logs {
+        border: solid 1px black;
+        padding: 1vw;
+    }
+    #blockly {
+        width: 100%;
+    height: 20vw;   
+    }
+</style>
+<script type="text/javascript" src="./microbit.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/p5.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.2/addons/p5.dom.min.js"></script>
+<body>
+    <button id="microbitButton">Connect microbit</button>
+    <button id="compass">compass</button>
+    <p>Log</p>
+    <div id="log" style="white-space: pre"></div>
+</body>
+
+<script type="text/javascript">
+  let services;
+      // gamePad
+  let controllers = [];
+  let once = {
+    x : false,
+    y : false,
+    one : false,
+    two : false,
+    three : false,
+    four : false
+  };
+ 
+    const scangamepads = () => {
+      let gamepads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
+      for (var i = 0; i < gamepads.length; i++) {
+          if (gamepads[i] && (gamepads[i].index in controllers)) {
+          controllers[gamepads[i].index] = gamepads[i];
+          }
+      }
+      console.log(services)
+      // console.log(controllers)
+      // controllers 유선 조이스틱 => [0]
+      // xbox 조이스틱=> [1]
+      let gamePad = {
+          x : controllers[0].axes[0],
+          y : controllers[0].axes[1],
+          one : controllers[0].buttons[0],
+          two : controllers[0].buttons[1],
+          three : controllers[0].buttons[2],
+          four : controllers[0].buttons[3]
+      }
+      console.log("x",gamePad.x)
+      console.log("y",gamePad.y)
+
+      //charcter, port, value
+          if (gamePad.x === -1 && !once.x) { //왼쪽
+              console.log("좌")
+          }
+          if (gamePad.x === 1 && !once.x) { // 오른쪽
+              console.log("오른")
+          }
+          if (gamePad.y === -1 && !once.y) {// 위
+              console.log("위")
+          }
+          if (gamePad.y === 1 && !once.y) { // 아래
+              console.log("아래")
+          }
+    if (gamePad.one.value === 1 && !once.one) {
+      
+    }
+    if (gamePad.two.value === 1 && !once.two) {
+    }
+    if (gamePad.three.value === 1 && !once.three) {
+    }
+    if (gamePad.four.value === 1 && !once.four) {
+    }
+    if (gamePad.one.value === 0 && once.one) {
+      once.one = false;
+
+    }
+    if (gamePad.two.value === 0 && once.two) {
+      once.two = false;
+
+    }
+    if (gamePad.three.value === 0 && once.three) {
+      once.three = false;
+    }
+    if (gamePad.four.value === 0 && once.four) {
+      once.four = false;
+
+    }
+  const addgamepad = (gamepad) => {
+    console.log("gamepad : ",gamepad)
+    controllers[gamepad.index] = gamepad; 
+    setInterval(() => {
+        scangamepads()
+    }, 100)
+  }
+  const gamepadHandler = (event, connecting) => {
+    console.log("gamepadconnected",event)
+    console.log(event.gamepad.id)
+    addgamepad(event.gamepad);
+  }
+}
+      // gamePad
+
+
+
+       
+      // //microbit
+      const logEl = document.getElementById("log");
+            const log = (message) => logEl.innerHTML = `${message}\n${logEl.innerHTML}`;
+            const logJson = (message) => log(JSON.stringify(message, null, 2));
+            const eventHandler = event => log(`${event.type}: ${JSON.stringify(event.detail, null, 2)}`);
+
+
+
+//0000180a-0000-1000-8000-00805f9b34fb
+
+
+//e95d0753-251d-470a-a062-fa1922dfa9a8
+//e95dca4b-251d-470a-a062-fa1922dfa9a8
+const ACCELEROMETER_SERVICE_UUID = "0000180a-0000-1000-8000-00805f9b34fb";
+const ACCELEROMETER_DATA_UUID = "00002a24-0000-1000-8000-00805f9b34fb";
+
+// service: 0xf005,
+//     rxChar: '5261da01-fa7e-42ab-850b-7c80220097cc',
+//     txChar: '5261da02-fa7e-42ab-850b-7c80220097cc'
+
+const UART_SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+
+// Allows the micro:bit to transmit a byte array
+const UART_TX_CHARACTERISTIC_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+
+// Allows a connected client to send a byte array
+const UART_RX_CHARACTERISTIC_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+let uBitDevice;
+let rxCharacteristic;
+let sinThetaX = 0;
+let sinThetaY = 0;
+let lastAccelerationX = 0;
+let lastAccelerationY = 0;
+
+function setup() {
+  createCanvas(400, 400, WEBGL);
+
+  const connectButton = createButton("Connect");
+  connectButton.mousePressed(connectButtonPressed);
+
+  const disconnectButton = createButton("Disconnect");
+  disconnectButton.mousePressed(disconnectButtonPressed);
+}
+
+function draw() {
+  background(0);
+
+  orbitControl();
+  translate(0, 0, 0);
+  normalMaterial();
+  push();
+  rotateZ(asin(sinThetaX));
+  rotateX(-asin(sinThetaY));
+  box(150, 150, 150);
+  pop();
+}
+
+async function connectButtonPressed() {
+    // console.log("Requesting Bluetooth Device...");
+    // uBitDevice = await navigator.bluetooth.requestDevice({
+    //   filters: [{ namePrefix: "BBC micro:bit" }],
+    //   optionalServices: [UART_SERVICE_UUID]
+    // });
+    uBitDevice = await microbit.requestMicrobit(window.navigator.bluetooth);
+    if (uBitDevice) {
+      const services = await microbit.getServices(uBitDevice);
+      console.log(services)
+
+      if (services.deviceInformationService) {
+        log("deviceInformationService")
+      logJson(await services.deviceInformationService.readDeviceInformation());
+    }
+
+    if (services.uartService) {
+      log("uartService")
+      services.uartService.addEventListener("receiveText", eventHandler);
+      await services.uartService.send(
+        new Uint8Array([104, 101, 108, 108, 111, 58])
+      ); // hello:
+    }
+
+    if (services.ledService) {
+      log("ledService")
+      await services.ledService.writeMatrixState([
+        [1, 0, 1, 0, 0],
+        [1, 1, 1, 1, 1],
+        [0, 0, 1, 0, 0],
+        [0, 1, 0, 1, 0],
+        [1, 0, 0, 0, 1]
+      ]);
+      logJson(await services.ledService.readMatrixState());
+
+      await services.ledService.setScrollingDelay(50);
+      log(await services.ledService.getScrollingDelay());
+
+      await services.ledService.writeText("Web BLE");
+    }
+
+    if (services.buttonService) {   
+      log("buttonService")
+         services.buttonService.addEventListener(
+        "buttonastatechanged",
+        eventHandler
+      );
+      services.buttonService.addEventListener(
+        "buttonbstatechanged",
+        eventHandler
+      );
+    }
+
+    if (services.temperatureService) {
+      log("temperatureService")
+      await services.temperatureService.setTemperaturePeriod(2000);
+      log(await services.temperatureService.getTemperaturePeriod());
+      services.temperatureService.addEventListener(
+        "temperaturechanged",
+        eventHandler
+      );
+    }
+
+    if (services.accelerometerService) {
+      log("accelerometerService")
+      /*
+      await services.accelerometerService.setAccelerometerPeriod(640);
+      log(await services.accelerometerService.getAccelerometerPeriod());
+      services.accelerometerService.addEventListener(
+        "accelerometerdatachanged",
+        eventHandler
+      );
+      */
+    }
+
+    if (services.magnetometerService) {
+      log("magnetometerService")
+      const startMagnetometer = async () => {
+        await services.magnetometerService.setMagnetometerPeriod(640);
+        log(await services.magnetometerService.getMagnetometerPeriod());
+
+        services.magnetometerService.addEventListener(
+          "magnetometerdatachanged",
+          eventHandler
+        );
+        services.magnetometerService.addEventListener(
+          "magnetometerbearingchanged",
+          eventHandler
+        );
+      };
+
+      services.magnetometerService.addEventListener(
+        "magnetometercalibrationchanged",
+        async (response) => {
+          if (response.detail === 2) {
+            await startMagnetometer();
+          }
+        }
+      );   
+      try {
+        await services.magnetometerService.calibrate();
+      } catch (e) {
+        await startMagnetometer();
+      } 
+    }
+  }
+}
+
+function onTxCharacteristicValueChanged(event) {
+  let receivedData = [];
+  for (var i = 0; i < event.target.value.byteLength; i++) {
+    receivedData[i] = event.target.value.getUint8(i);
+  }
+
+  const receivedString = String.fromCharCode.apply(null, receivedData);
+  console.log(receivedString);
+}
+
+function disconnectButtonPressed() {
+  if (!uBitDevice) {
+    return;
+  }
+
+  if (uBitDevice.gatt.connected) {
+    uBitDevice.gatt.disconnect();
+    console.log("Disconnected");
+  }
+}
+
+function onAccelerometerValueChanged(event) {
+  // Retrieve acceleration values,
+  // then convert from milli-g (i.e. 1/1000 of a g) to g
+  const accelerationX = event.target.value.getInt16(0, true) / 1000.0;
+  const accelerationY = event.target.value.getInt16(2, true) / 1000.0;
+  const accelerationZ = event.target.value.getInt16(4, true) / 1000.0;
+
+  const smoothedAccelerationX = accelerationX * 0.2 + lastAccelerationX * 0.8;
+  const smoothedAccelerationY = accelerationY * 0.2 + lastAccelerationY * 0.8;
+
+  lastAccelerationX = smoothedAccelerationX;
+  lastAccelerationY = smoothedAccelerationY;
+
+  sinThetaX = constrain(smoothedAccelerationX, -1, 1);
+  sinThetaY = constrain(smoothedAccelerationY, -1, 1);
+}
+
+ 
+</script>
+</html>
