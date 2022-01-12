@@ -39,55 +39,48 @@ window.onload = () => {
 
                 logJson(pin_data);
                 console.log(services.ioPinService);
-
-                window.addEventListener('keydown', (e) => {
-                    if (e.key === 'ArrowLeft') {
-                        let pwm = {
-                            pin: 2, // 0,1,2
-                            value: 250, // 50-250
-                            period: 100000, // 10000 microsecconds = 10 millisecconds
-                        };
-                        services.ioPinService.setPwmControl(pwm);
-                        // services.ioPinService.writePinData(pwm);
-                    }
-                    if (e.key === 'ArrowRight') {
-                        let pwm = {
-                            pin: 1, // 0,1,2
-                            value: 100, // 50-250
-                            period: 100000, // 10000 microsecconds = 10 millisecconds
-                        };
-                        services.ioPinService.setPwmControl(pwm);
-                    }
-                    console.log(e);
-                });
-
-                window.addEventListener('keyup', (e) => {});
-
-                const send_ble = (key, value) => {
-                    let _key = key;
-
-                    if (key === 208) {
-                        _key = 0;
-                    }
-                    if (key === 209) {
-                        _key = 1;
-                    }
-                    if (key === 210) {
-                        _key = 2;
-                    }
-
-                    // servoWritePin(AnalogPin.P0, 180)
-
-                    if (key === 211) {
-                        console.log(value);
-                        services.ledService.writeText(value.toString());
-                    }
-                };
+ 
             }
 
             if (services.uartService) {
                 services.uartService.addEventListener('receiveText', eventHandler);
                 await services.uartService.send(new Uint8Array([104, 101, 108, 108, 111, 58])); // hello:
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowUp') {
+                        services.uartService.sendText("forward:")
+                    }
+                    if (e.key === 'ArrowDown') {
+                        services.uartService.sendText("back:")
+                    }
+                    if (e.key === 'ArrowLeft') {
+                        services.uartService.sendText("left:")
+                    }
+                    if (e.key === 'ArrowRight') {
+                        services.uartService.sendText("right:")
+                    }
+                    if (e.key === 'Enter') {
+                        services.uartService.sendText("stop:")
+                    }
+                    console.log(e.key)
+ 
+                });
+
+                window.addEventListener('keyup', (e) => {
+
+                    if (e.key === 'ArrowUp') {
+                        services.uartService.sendText("stop:")
+
+                    }
+                    if (e.key === 'ArrowDown') {
+                        services.uartService.sendText("stop:")
+                    }
+                    if (e.key === 'ArrowLeft') {
+                        services.uartService.sendText("center:")
+                    }
+                    if (e.key === 'ArrowRight') {
+                        services.uartService.sendText("center:")
+                    }
+                });
             }
 
             if (services.ledService) {
